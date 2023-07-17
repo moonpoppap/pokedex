@@ -17,10 +17,10 @@ class HomeController extends StateNotifier<AppPageState>{
 
   AppFeed<PokemonEntity> get appFeedPokemonObs => _appFeedPokemonObs;
 
-  Future<void> getPokemon() async {
+  Future<void> getPokemon({forceReload = true}) async {
     AppFeed<PokemonEntity> appFeed = _appFeedPokemonObs;
 
-    if(appFeed.feed.isEmpty){
+    if(appFeed.feed.isEmpty || forceReload){
       state = state.copyWith(status: AppPageStatus.loading);
       appFeed = AppFeed(
         feed: [],
