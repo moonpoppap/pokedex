@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import '../../models/pokemon_model.dart';
+import '../../../domain/enties/pokemon_entity.dart';
+
 
 class PokemonCard extends StatelessWidget {
-  PokemonItemResponse data;
+  final PokemonEntity data;
   PokemonCard({Key? key, required this.data}) : super(key: key);
 
   @override
@@ -87,7 +88,7 @@ class PokemonCard extends StatelessWidget {
             top: 4,
             right: 8,
             child: Text(
-              formatID(data.id ?? ''),
+              formatID(data.id.toString() ?? '0'),
               style: TextStyle(
                 color: const Color(0xFF666666),
                 fontSize: 8.sp,

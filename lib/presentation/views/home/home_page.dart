@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:pokedex/colors.dart';
-import 'package:pokedex/presentation/widgets/pokemon_card.dart';
+import 'package:pokedex/data/models/app_feed.dart';
+import 'package:pokedex/domain/enties/pokemon_entity.dart';
+import 'package:pokedex/presentation/views/home/provider.dart';
+import 'package:pokedex/presentation/views/reuse/app_page_state.dart';
+import 'package:pokedex/presentation/widgets/home/pokemon_card.dart';
 
-import '../../data/reopsitories/pokemon_repository.dart';
+import '../../../data/reopsitories/pokemon_repository_impl.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -19,12 +23,16 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   void initState() {
     super.initState();
-    controller.addListener(() {
-      if(controller.position.maxScrollExtent == controller.offset){
-        print('scrolllllllll');
-        // ref.watch(pokemonData);
-      }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(homePageStateProvider.notifier).getPokemon();
     });
+    // controller.addListener(() {
+    //   // if(controller.position.maxScrollExtent == controller.offset){
+    //   //   print('scrolllllllll');
+    //   //   // ref.watch(pokemonData);
+    //   // }
+    //
+    // });
   }
 
   @override
@@ -36,8 +44,47 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   Widget build(BuildContext context) {
 
-    final _data = ref.watch(pokemonData);
-    // print('_data_data $_data');
+    final dataObs = ref.watch(homePageStateProvider);
+
+    Widget widgetBuilder = Container();
+
+    if(dataObs.status == AppPageStatus.initial || dataObs.status == AppPageStatus.loading){
+      widgetBuilder = const CircularProgressIndicator();
+    }else if(dataObs.status == AppPageStatus.success){
+      final data = dataObs.value as AppFeed<PokemonEntity>;
+
+      widgetBuilder = Container(
+        margin: const EdgeInsets.all(4.0),
+        // padding: const EdgeInsets.all(4.0),
+        width: double.infinity,
+        decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            color: Colors.white
+        ),
+        child: GridView.builder(
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: data.feed.length,
+          shrinkWrap: true,
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 24.h),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+          ),
+          itemBuilder: (BuildContext context, int index) {
+            return PokemonCard(data: data.feed[index]);
+          },
+          // children: [
+          //   PokemonCard(data: _data.value.listData[]),
+          //   PokemonCard(),
+          //   PokemonCard(),
+          // ],
+        ),
+      );
+    }else{
+      widgetBuilder = const Text('Error');
+    }
+
     return Container(
       color: PokedexColors.primary,
       child: SafeArea(
@@ -107,39 +154,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       SizedBox(height: 20.h,),
                     ],),
                 ),
-                _data.when(
-                    data: (data) {
-                      return Container(
-                        margin: const EdgeInsets.all(4.0),
-                        // padding: const EdgeInsets.all(4.0),
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: Colors.white
-                        ),
-                        child: GridView.builder(
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _data.value?.listData?.length,
-                          shrinkWrap: true,
-                          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 24.h),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            mainAxisSpacing: 8,
-                            crossAxisSpacing: 8,
-                          ),
-                          itemBuilder: (BuildContext context, int index) {
-                            return PokemonCard(data: _data.value!.listData![index]);
-                          },
-                          // children: [
-                          //   PokemonCard(data: _data.value.listData[]),
-                          //   PokemonCard(),
-                          //   PokemonCard(),
-                          // ],
-                        ),
-                      );
-                    },
-                    error: (error, stackTrace) => Text('Error: $error'),
-                    loading: () => const CircularProgressIndicator())
+                widgetBuilder
               ],
             ),
           ),
